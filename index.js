@@ -32,15 +32,18 @@ function createDat (dirOrStorage, opts, cb) {
 
   var archive
   var key = opts.key
-  var dir = (typeof dirOrStorage === 'string') ? dirOrStorage : null
+  var dir = typeof dirOrStorage === 'string' ? dirOrStorage : null
   var storage = datStore(dirOrStorage, opts)
   var createIfMissing = !(opts.createIfMissing === false)
   var errorIfExists = opts.errorIfExists || false
-  opts = xtend({
-    // TODO: make sure opts.dir is a directory, not file
-    dir: dir,
-    latest: true
-  }, opts)
+  opts = xtend(
+    {
+      // TODO: make sure opts.dir is a directory, not file
+      dir: dir,
+      latest: true
+    },
+    opts
+  )
 
   if (!opts.dir) return create() // TODO: check other storage
   checkIfExists()
@@ -51,19 +54,23 @@ function createDat (dirOrStorage, opts, cb) {
    */
   function checkIfExists () {
     // Create after we check for pre-sleep .dat stuff
-    var createAfterValid = (createIfMissing && !errorIfExists)
+    var createAfterValid = createIfMissing && !errorIfExists
 
     var missingError = new Error('Dat storage does not exist.')
     missingError.name = 'MissingError'
     var existsError = new Error('Dat storage already exists.')
     existsError.name = 'ExistsError'
-    var oldError = new Error('Dat folder contains incompatible metadata. Please remove your metadata (rm -rf .dat).')
+    var oldError = new Error(
+      'Dat folder contains incompatible metadata. ' +
+        'Please remove your metadata (rm -rf .dat).'
+    )
     oldError.name = 'IncompatibleError'
 
     fs.readdir(path.join(opts.dir, '.dat'), function (err, files) {
       // TODO: omg please make this less confusing.
       var noDat = !!(err || !files.length)
-      var validSleep = (files && files.length && files.indexOf('metadata.key') > -1)
+      var validSleep =
+        files && files.length && files.indexOf('metadata.key') > -1
       var badDat = !(noDat || validSleep)
 
       if ((noDat || validSleep) && createAfterValid) return create()
@@ -82,7 +89,7 @@ function createDat (dirOrStorage, opts, cb) {
    * @private
    */
   function create () {
-    if (dir && !opts.temp && !key && (opts.indexing !== false)) {
+    if (dir && !opts.temp && !key && opts.indexing !== false) {
       // Only set opts.indexing if storage is dat-storage
       // TODO: this should be an import option instead, https://github.com/mafintosh/hyperdrive/issues/160
       opts.indexing = true
